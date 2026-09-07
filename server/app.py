@@ -1,4 +1,3 @@
-# server/app.py
 from flask import Flask, jsonify
 from flask_cors import CORS
 from config import Config
@@ -30,6 +29,18 @@ def create_app():
 
 if __name__ == "__main__":
     app = create_app()
+
     with app.app_context():
-        db.create_all()  # Creates PostgreSQL tables if they don't exist
+        print("\n" + "=" * 50)
+        print(" [1/2] Connecting to PostgreSQL Database...")
+        try:
+            db.create_all()
+            print(" [SUCCESS] Connected! Database tables created/verified.")
+        except Exception as e:
+            print(f" [ERROR] Database connection failed:\n{e}")
+            print("=" * 50 + "\n")
+            raise e
+        print("=" * 50)
+
+    print("\n [2/2] Starting Flask server on http://127.0.0.1:5555 ...\n")
     app.run(port=5555, debug=True)
