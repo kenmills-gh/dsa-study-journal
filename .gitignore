@@ -1,0 +1,48 @@
+# ==========================================
+# Environment & Secret Files (CRITICAL)
+# ==========================================
+.env
+.env.*
+!.env.example
+
+# ==========================================
+# Python / Flask / Server
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+instance/
+*.db
+*.sqlite
+*.sqlite3
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ==========================================
+# Node / React / Client
+# ==========================================
+node_modules/
+client/node_modules/
+dist/
+client/dist/
+build/
+client/build/
+.npm
+*.log
+
+# ==========================================
+# Editor & OS Files
+# ==========================================
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
