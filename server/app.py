@@ -3,6 +3,9 @@ from flask_cors import CORS
 from config import Config
 from extensions import db, bcrypt, jwt
 
+import models  # Ensures models are registered with SQLAlchemy metadata
+from routes.auth import auth_bp
+
 
 def create_app():
     app = Flask(__name__)
@@ -15,6 +18,9 @@ def create_app():
     db.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
+
+    # Register blueprints
+    app.register_blueprint(auth_bp)
 
     # Health check route
     @app.route("/health", methods=["GET"])
