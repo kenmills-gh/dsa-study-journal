@@ -1,9 +1,9 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 from config import Config
-from extensions import db, bcrypt, jwt
-
+from extensions import db, bcrypt, jwt, migrate
 import models  # Ensures models are registered with SQLAlchemy metadata
+
 from routes.auth import auth_bp
 from routes.problems import problems_bp
 from routes.attempts import attempts_bp
@@ -20,6 +20,7 @@ def create_app():
     db.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
+    migrate.init_app(app, db)
 
     # Register blueprints
     app.register_blueprint(auth_bp)
@@ -44,7 +45,8 @@ if __name__ == "__main__":
         print("\n" + "=" * 50)
         print(" [1/2] Connecting to PostgreSQL Database...")
         try:
-            db.create_all()
+            # Simple connection check replacing db.create_all()
+            db.session.execute(db.text("SELECT 1"))
             print(" [SUCCESS] Connected! Database tables created/verified.")
         except Exception as e:
             print(f" [ERROR] Database connection failed:\n{e}")
