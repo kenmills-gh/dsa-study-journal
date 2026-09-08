@@ -6,6 +6,7 @@ from extensions import db, bcrypt, jwt
 import models  # Ensures models are registered with SQLAlchemy metadata
 from routes.auth import auth_bp
 from routes.problems import problems_bp
+from routes.attempts import attempts_bp
 
 
 def create_app():
@@ -23,6 +24,7 @@ def create_app():
     # Register blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(problems_bp)
+    app.register_blueprint(attempts_bp)
 
     # Health check route
     @app.route("/health", methods=["GET"])
