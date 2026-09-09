@@ -2,13 +2,18 @@ import { useState, useEffect } from 'react';
 import API from '../api/axios';
 import Navbar from '../components/Navbar';
 import AddProblemModal from '../components/AddProblemModal';
+import AttemptLogsModal from '../components/AttemptLogsModal';
 import { Plus, ExternalLink, BookOpen, Layers } from 'lucide-react';
 
 const Dashboard = () => {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Modal State Management
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedProblemForAttempts, setSelectedProblemForAttempts] = useState(null);
+  const [isAttemptsModalOpen, setIsAttemptsModalOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -16,7 +21,6 @@ const Dashboard = () => {
     const fetchProblems = async () => {
       try {
         const res = await API.get('/problems');
-        // GET /api/problems returns array directly[cite: 6]
         if (isMounted) setProblems(res.data);
       } catch (err) {
         console.error('Failed to fetch problems', err);
@@ -36,7 +40,22 @@ const Dashboard = () => {
     setProblems((prev) => [newProblem, ...prev]);
   };
 
-  // Strictly matches backend key pattern_category[cite: 2]
+  // Dynamically increments attempt count on the problem card when logged in modal
+  const handleAttemptAdded = (problemId) => {
+    setProblems((prev) =>
+      prev.map((p) =>
+        p.id === problemId
+          ? { ...p, total_attempts: (p.total_attempts || 0) + 1 }
+          : p
+      )
+    );
+  };
+
+  const handleOpenAttemptsModal = (problem) => {
+    setSelectedProblemForAttempts(problem);
+    setIsAttemptsModalOpen(true);
+  };
+
   const filteredProblems =
     selectedCategory === 'All'
       ? problems
@@ -69,7 +88,7 @@ const Dashboard = () => {
           </div>
 
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsAddModalOpen(true)}
             className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2 text-sm transition-colors shrink-0"
           >
             <Plus className="w-4 h-4" />
@@ -155,8 +174,11 @@ const Dashboard = () => {
                     <span className="text-xs text-slate-600">No external link</span>
                   )}
 
-                  <button className="text-xs font-semibold text-emerald-400 hover:underline">
-                    Attempts: {problem.total_attempts} →
+                  <button
+                    onClick={() => handleOpenAttemptsModal(problem)}
+                    className="text-xs font-semibold text-emerald-400 hover:underline"
+                  >
+                    Attempts: {problem.total_attempts ?? 0} →
                   </button>
                 </div>
               </div>
@@ -166,9 +188,16 @@ const Dashboard = () => {
       </main>
 
       <AddProblemModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
         onProblemAdded={handleProblemAdded}
+      />
+
+      <AttemptLogsModal
+        isOpen={isAttemptsModalOpen}
+        onClose={() => setIsAttemptsModalOpen(false)}
+        problem={selectedProblemForAttempts}
+        onAttemptAdded={handleAttemptAdded}
       />
     </div>
   );
