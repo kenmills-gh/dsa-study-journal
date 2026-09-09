@@ -2,18 +2,21 @@ import { useState, useEffect } from 'react';
 import API from '../api/axios';
 import Navbar from '../components/Navbar';
 import AddProblemModal from '../components/AddProblemModal';
+import EditProblemModal from '../components/EditProblemModal';
 import AttemptLogsModal from '../components/AttemptLogsModal';
-import { Plus, ExternalLink, BookOpen, Layers } from 'lucide-react';
+import { Plus, ExternalLink, BookOpen, Layers, Edit2, Trash2 } from 'lucide-react';
 
 const Dashboard = () => {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  // Modal State Management
+  // Modal States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [selectedProblemForAttempts, setSelectedProblemForAttempts] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAttemptsModalOpen, setIsAttemptsModalOpen] = useState(false);
+  
+  const [selectedProblem, setSelectedProblem] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -40,7 +43,26 @@ const Dashboard = () => {
     setProblems((prev) => [newProblem, ...prev]);
   };
 
-  // Dynamically increments attempt count on the problem card when logged in modal
+  const handleProblemUpdated = (updatedProblem) => {
+    setProblems((prev) =>
+      prev.map((p) => (p.id === updatedProblem.id ? updatedProblem : p))
+    );
+  };
+
+  const handleDeleteProblem = async (problemId) => {
+    if (!window.confirm('Are you sure you want to delete this problem and all its attempt history?')) {
+      return;
+    }
+
+    try {
+      await API.delete(`/problems/${problemId}`);
+      setProblems((prev) => prev.filter((p) => p.id !== problemId));
+    } catch (err) {
+      console.error('Failed to delete problem', err);
+      alert('Failed to delete problem. Please try again.');
+    }
+  };
+
   const handleAttemptAdded = (problemId) => {
     setProblems((prev) =>
       prev.map((p) =>
@@ -49,11 +71,6 @@ const Dashboard = () => {
           : p
       )
     );
-  };
-
-  const handleOpenAttemptsModal = (problem) => {
-    setSelectedProblemForAttempts(problem);
-    setIsAttemptsModalOpen(true);
   };
 
   const filteredProblems =
@@ -71,6 +88,18 @@ const Dashboard = () => {
         return 'bg-red-500/10 text-red-400 border-red-500/20';
       default:
         return 'bg-slate-800 text-slate-300 border-slate-700';
+    }
+  };
+
+  const getStatusBadge = (status = 'Learning') => {
+    switch (status) {
+      case 'Mastered':
+        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+      case 'Needs Review':
+        return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+      case 'Learning':
+      default:
+        return 'bg-sky-500/10 text-sky-400 border-sky-500/20';
     }
   };
 
@@ -137,25 +166,58 @@ const Dashboard = () => {
             {filteredProblems.map((problem) => (
               <div
                 key={problem.id}
-                className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl p-5 flex flex-col justify-between transition-colors"
+                className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl p-5 flex flex-col justify-between transition-colors group"
               >
                 <div>
-                  <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="flex items-start justify-between gap-2 mb-2">
                     <h3 className="font-semibold text-slate-100 text-lg line-clamp-1">
                       {problem.title}
                     </h3>
-                    <span
-                      className={`text-xs px-2.5 py-1 rounded-full border font-medium shrink-0 ${getDifficultyBadge(
-                        problem.difficulty
-                      )}`}
-                    >
-                      {problem.difficulty}
-                    </span>
+                    
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span
+                        className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${getStatusBadge(
+                          problem.status
+                        )}`}
+                      >
+                        {problem.status || 'Learning'}
+                      </span>
+                      <span
+                        className={`text-[11px] px-2 py-0.5 rounded-full border font-medium ${getDifficultyBadge(
+                          problem.difficulty
+                        )}`}
+                      >
+                        {problem.difficulty}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-4">
-                    <Layers className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>{problem.pattern_category}</span>
+                  <div className="flex items-center justify-between text-xs text-slate-400 mb-4">
+                    <div className="flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>{problem.pattern_category}</span>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => {
+                          setSelectedProblem(problem);
+                          setIsEditModalOpen(true);
+                        }}
+                        className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition-colors"
+                        title="Edit problem"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProblem(problem.id)}
+                        className="text-slate-400 hover:text-red-400 p-1 rounded hover:bg-slate-800 transition-colors"
+                        title="Delete problem"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -175,7 +237,10 @@ const Dashboard = () => {
                   )}
 
                   <button
-                    onClick={() => handleOpenAttemptsModal(problem)}
+                    onClick={() => {
+                      setSelectedProblem(problem);
+                      setIsAttemptsModalOpen(true);
+                    }}
                     className="text-xs font-semibold text-emerald-400 hover:underline"
                   >
                     Attempts: {problem.total_attempts ?? 0} →
@@ -193,10 +258,18 @@ const Dashboard = () => {
         onProblemAdded={handleProblemAdded}
       />
 
+      <EditProblemModal
+        key={selectedProblem?.id}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        problem={selectedProblem}
+        onProblemUpdated={handleProblemUpdated}
+      />
+
       <AttemptLogsModal
         isOpen={isAttemptsModalOpen}
         onClose={() => setIsAttemptsModalOpen(false)}
-        problem={selectedProblemForAttempts}
+        problem={selectedProblem}
         onAttemptAdded={handleAttemptAdded}
       />
     </div>
