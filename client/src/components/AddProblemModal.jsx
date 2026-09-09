@@ -1,109 +1,115 @@
 import { useState } from 'react';
 import API from '../api/axios';
-import { X, PlusCircle, AlertCircle } from 'lucide-react';
-
-const PATTERNS = [
-  'Two Pointers',
-  'Sliding Window',
-  'Fast & Slow Pointers',
-  'Monotonic Stack',
-  'Binary Search',
-  'Backtracking',
-  'Trees & Graphs',
-  'Dynamic Programming',
-];
+import { X, PlusCircle } from 'lucide-react';
 
 const AddProblemModal = ({ isOpen, onClose, onProblemAdded }) => {
-  const [title, setTitle] = useState('');
-  const [patternCategory, setPatternCategory] = useState(PATTERNS[0]);
-  const [difficulty, setDifficulty] = useState('Medium');
-  const [externalUrl, setExternalUrl] = useState('');
+  const [formData, setFormData] = useState({
+    title: '',
+    pattern_category: 'Two Pointers',
+    difficulty: 'Easy',
+    external_url: '',
+  });
   const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setSubmitting(true);
+    setLoading(true);
 
     try {
-      const res = await API.post('/problems', {
-        title,
-        pattern_category: patternCategory,
-        difficulty,
-        external_url: externalUrl || null,
+      // Sends pattern_category and external_url as expected by POST /api/problems
+      const res = await API.post('/problems', formData);
+      
+      // Unwraps the nested problem object from { message, problem }
+      onProblemAdded(res.data.problem);
+      
+      setFormData({
+        title: '',
+        pattern_category: 'Two Pointers',
+        difficulty: 'Easy',
+        external_url: '',
       });
-      onProblemAdded(res.data);
       onClose();
-      setTitle('');
-      setExternalUrl('');
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to add problem.');
+      setError(err.response?.data?.error || 'Failed to add problem');
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-lg p-6 shadow-2xl">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-          <h2 className="text-xl font-bold text-white">Add New Problem</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-md p-6 shadow-2xl relative">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <h3 className="text-xl font-bold text-white mb-4">Add New Problem</h3>
 
         {error && (
-          <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400 text-sm">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-lg">
+            {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
               Problem Title
             </label>
             <input
               type="text"
+              name="title"
               required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              value={formData.title}
+              onChange={handleChange}
               placeholder="e.g. 3Sum"
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                 Pattern Category
               </label>
               <select
-                value={patternCategory}
-                onChange={(e) => setPatternCategory(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+                name="pattern_category"
+                value={formData.pattern_category}
+                onChange={handleChange}
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
               >
-                {PATTERNS.map((pattern) => (
-                  <option key={pattern} value={pattern}>
-                    {pattern}
-                  </option>
-                ))}
+                <option value="Two Pointers">Two Pointers</option>
+                <option value="Sliding Window">Sliding Window</option>
+                <option value="Fast & Slow Pointers">Fast & Slow Pointers</option>
+                <option value="Monotonic Stack">Monotonic Stack</option>
+                <option value="Binary Search">Binary Search</option>
+                <option value="Backtracking">Backtracking</option>
+                <option value="Trees & Graphs">Trees & Graphs</option>
+                <option value="Dynamic Programming">Dynamic Programming</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                 Difficulty
               </label>
               <select
-                value={difficulty}
-                onChange={(e) => setDifficulty(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+                name="difficulty"
+                value={formData.difficulty}
+                onChange={handleChange}
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
               >
                 <option value="Easy">Easy</option>
                 <option value="Medium">Medium</option>
@@ -113,15 +119,16 @@ const AddProblemModal = ({ isOpen, onClose, onProblemAdded }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
               External URL (Optional)
             </label>
             <input
               type="url"
-              value={externalUrl}
-              onChange={(e) => setExternalUrl(e.target.value)}
-              placeholder="https://leetcode.com/problems/3sum/"
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+              name="external_url"
+              value={formData.external_url}
+              onChange={handleChange}
+              placeholder="https://leetcode.com/problems/..."
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
 
@@ -129,17 +136,17 @@ const AddProblemModal = ({ isOpen, onClose, onProblemAdded }) => {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-slate-400 hover:text-white"
+              className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={submitting}
-              className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-slate-950 font-semibold px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors"
+              disabled={loading}
+              className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-semibold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors disabled:opacity-50"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>{submitting ? 'Saving...' : 'Add Problem'}</span>
+              <span>{loading ? 'Adding...' : 'Add Problem'}</span>
             </button>
           </div>
         </form>
